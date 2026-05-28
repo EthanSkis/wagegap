@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Your dashboard — Wagegap</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="Where your wage falls against the benchmark for your specialty, metro, and experience." />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container row">
+    <a href="/" class="logo"><img src="/wagegap-wordmark.svg" alt="Wagegap" /></a>
+    <div class="who">
+      <span class="email" id="user-email"></span>
+      <button class="btn btn-ghost" id="signout" hidden>Sign out</button>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <div class="gate" id="gate">Loading your dashboard…</div>
+
+  <div id="app" hidden class="dash">
+
+    <!-- ===== VERDICT + POSITION (the payoff) ===== -->
+    <section class="vhero" id="vhero">
+      <span class="eyebrow">Your position</span>
+      <h1 class="vhead" id="v-headline">—</h1>
+      <p class="vsub" id="v-sub"></p>
+      <div class="vpos">
+        <div class="vpct">
+          <span class="vpct-num" id="v-pct">—</span>
+          <span class="vpct-lab">percentile</span>
+        </div>
+        <div class="bars" id="v-bars"></div>
+      </div>
+      <p class="vsource mono" id="v-source"></p>
+    </section>
+
+    <!-- ===== NEXT STEP ===== -->
+    <section class="next-card" id="next-card">
+      <span class="eyebrow" id="next-eyebrow">Your next step</span>
+      <h2 id="next-title">—</h2>
+      <p id="next-body"></p>
+    </section>
+
+    <!-- ===== BREAKDOWN ===== -->
+    <section class="block">
+      <h2 class="block-h">What's behind this read</h2>
+      <p class="block-sub">You're compared only against nurses in the same slice — not one blended number. Here's exactly what we matched on.</p>
+
+      <div class="chips" id="b-chips"></div>
+
+      <div class="tiles" id="b-tiles"></div>
+
+      <div class="levers">
+        <h3>Pay levers in your market</h3>
+        <ul id="b-levers"></ul>
+      </div>
+    </section>
+
+    <!-- ===== YOUR ENTRY (editable) ===== -->
+    <section class="block entry">
+      <h2 class="block-h">Your entry</h2>
+      <p class="block-sub" id="e-updated"></p>
+      <dl id="e-list"></dl>
+      <div class="after">
+        <a href="/start" class="btn btn-primary btn-lg">Edit / update my wage</a>
+        <a href="/" class="btn btn-ghost btn-lg">Back to home</a>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/supabase-client.js"></script>
+<script src="/benchmark.js"></script>
+<script>
+  let session = null;
+  const gate = document.getElementById("gate");
+  const app  = document.getElementById("app");
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function money(n) { return "$" + Number(n).toFixed(2); }
+  function pctText(v) { return (v > 0 ? "+" : "") + v + "%"; }
+
+  function render(entry) {
+    const r = WG.read(entry);
+    const specialty = entry.specialty || "your specialty";
+    const metro = entry.metro || "your metro";
+    const shift = entry.shift_type || "—";
+    const empType = entry.employer_type || "Not specified";
+
+    // --- Verdict + position ---
+    const head = document.getElementById("v-headline");
+    head.textContent = r.headline;
+    head.className = "vhead tone-" + r.tone;
+
+    const absDiff = Math.abs(r.pctDiff);
+    const dir = r.pctDiff > 0 ? "above" : (r.pctDiff < 0 ? "below" : "right at");
+    document.getElementById("v-sub").textContent =
+      (r.pctDiff === 0 ? "Right at the median" : absDiff + "% " + dir + " the median") +
+      " for " + specialty + " nurses in " + metro + ".";
+
+    document.getElementById("v-pct").textContent = WG.ordinal(r.pct);
+
+    // bars
+    const a = WG.anchors(r.median);
+    const hi = a[0].amt, lo = a[a.length - 1].amt;
+    const floor = lo * 0.90, ceil = hi * 1.08;
+    function w(amt) { return clamp(Math.round(20 + (amt - floor) / (ceil - floor) * 76), 12, 98); }
+    const rows = a.map(function (x) { return { label: WG.ordinal(x.p), amt: x.amt, you: false }; });
+    rows.push({ label: "You · " + WG.ordinal(r.pct), amt: r.total, you: true });
+    rows.sort(function (x, y) { return y.amt - x.amt; });
+    document.getElementById("v-bars").innerHTML = rows.map(function (x) {
+      return '<div class="brow' + (x.you ? " you" : "") + '">' +
+        '<span class="pct">' + x.label + '</span>' +
+        '<div class="track"><div class="fill" style="width:' + w(x.amt) + '%"></div></div>' +
+        '<span class="amt">' + money(x.amt) + '</span></div>';
+    }).join("");
+
+    document.getElementById("v-source").textContent =
+      "Seed benchmark · " + specialty + " · " + metro + " · " + r.band.label +
+      " · " + shift + " · " + empType + ". Sharpens as more nurses report.";
+
+    // --- Next step ---
+    const card = document.getElementById("next-card");
+    const title = document.getElementById("next-title");
+    const body = document.getElementById("next-body");
+    card.className = "next-card tone-" + r.tone;
+    if (r.tone === "under") {
+      title.textContent = "Ask for a raise — here's the number.";
+      body.innerHTML = "The market median for your slice is <strong>" + money(r.median) + "/hr</strong>. " +
+        "You're <strong>" + money(r.gapToMedian) + "/hr below</strong> it — about <strong>" + WG.annual(r.gapToMedian) +
+        "/yr</strong> at 36 hrs/week. A reasonable ask is <strong>" + money(r.median) + "–" + money(r.p75) + "/hr</strong>. " +
+        "Bring this read to your next comp conversation, and check what the Fair-Pay Certified employers in " + metro + " are paying.";
+    } else if (r.tone === "fair") {
+      const toTop = Math.max(0, r.p75 - r.total);
+      title.textContent = "You're in range — here's the top of it.";
+      body.innerHTML = "You're within market for your slice. The 75th percentile is <strong>" + money(r.p75) + "/hr</strong>" +
+        (toTop > 0 ? " — about <strong>" + WG.annual(toTop) + "/yr</strong> more if you want to push toward the top quartile." : ".") +
+        " Re-check after your next review or if you change shift or employer.";
+    } else {
+      title.textContent = "You're ahead — keep it that way.";
+      body.innerHTML = "You're above the local median at <strong>" + money(r.total) + "/hr</strong> (75th percentile is " +
+        money(r.p75) + "/hr). Worth knowing your number if you ever negotiate or consider a move — and worth re-checking as the benchmark sharpens.";
+    }
+
+    // --- Breakdown chips ---
+    const chips = [
+      ["Specialty", specialty],
+      ["Metro", metro],
+      ["Experience", r.band.label],
+      ["Shift", shift],
+      ["Employer type", empType]
+    ];
+    document.getElementById("b-chips").innerHTML = chips.map(function (c) {
+      return '<span class="chip"><span class="chip-k">' + c[0] + '</span><span class="chip-v">' + c[1] + '</span></span>';
+    }).join("");
+
+    // --- base / diff / total tiles ---
+    const base = Number(entry.hourly_base || 0);
+    const diff = Number(entry.differentials || 0);
+    const diffPct = r.total > 0 ? Math.round(diff / r.total * 100) : 0;
+    document.getElementById("b-tiles").innerHTML =
+      '<div class="tile"><div class="tile-lab">Base</div><div class="tile-val">' + money(base) + '</div><div class="tile-sub">per hour</div></div>' +
+      '<div class="tile"><div class="tile-lab">Differentials</div><div class="tile-val">' + money(diff) + '</div><div class="tile-sub">' + diffPct + '% of total</div></div>' +
+      '<div class="tile tile-accent"><div class="tile-lab">Total</div><div class="tile-val">' + money(r.total) + '</div><div class="tile-sub">vs median ' + money(r.median) + '</div></div>';
+
+    // --- levers ---
+    const sf = WG.SHIFT_FACTOR[shift] != null ? WG.SHIFT_FACTOR[shift] : 1;
+    const pf = WG.EMPLOYER_FACTOR[empType] != null ? WG.EMPLOYER_FACTOR[empType] : 1;
+    const ef = r.band.factor;
+    const levers = [];
+    levers.push("Shift — " + shift + ": " + (sf > 1 ? pctText(Math.round((sf - 1) * 100)) + " vs day rate" : "day-rate baseline"));
+    levers.push("Experience — " + r.band.label + ": " + (ef !== 1 ? pctText(Math.round((ef - 1) * 100)) + " vs a 2–4 yr nurse" : "baseline band"));
+    levers.push("Employer — " + empType + ": " + (pf !== 1 ? pctText(Math.round((pf - 1) * 100)) + " vs hospital staff" : "hospital-staff baseline"));
+    if (empType !== "Travel / agency") levers.push("Travel / agency roles run roughly +45% over staff pay (with trade-offs).");
+    document.getElementById("b-levers").innerHTML = levers.map(function (l) { return "<li>" + l + "</li>"; }).join("");
+
+    // --- entry list ---
+    const exp = entry.experience_years == null ? "—" : entry.experience_years + " yr";
+    const dt = entry.created_at ? new Date(entry.created_at) : null;
+    document.getElementById("e-updated").textContent = dt
+      ? "Last updated " + dt.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
+      : "";
+    const items = [
+      ["Specialty", specialty],
+      ["Metro", metro],
+      ["Experience", exp],
+      ["Shift", shift],
+      ["Employer", entry.employer || "—"],
+      ["Employer type", empType],
+      ["Base hourly", money(base)],
+      ["Differentials", money(diff)],
+      ["Total hourly", money(r.total)]
+    ];
+    document.getElementById("e-list").innerHTML = items.map(function (it) {
+      return '<div class="erow"><dt>' + it[0] + '</dt><dd>' + it[1] + '</dd></div>';
+    }).join("");
+  }
+
+  document.getElementById("signout").addEventListener("click", async function () {
+    await sb.auth.signOut();
+    location.href = "/";
+  });
+
+  (async function () {
+    const { data: sd } = await sb.auth.getSession();
+    if (!sd || !sd.session) { location.href = "/signin?next=" + encodeURIComponent("/dashboard"); return; }
+    session = sd.session;
+    document.getElementById("user-email").textContent = session.user.email || "";
+    document.getElementById("signout").hidden = false;
+
+    const { data: rows, error } = await sb
+      .from("wage_reports")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (error) { gate.textContent = "Couldn't load your data: " + error.message; return; }
+    if (!rows || rows.length === 0) { location.href = "/start"; return; }
+
+    render(rows[0]);
+    gate.hidden = true;
+    app.hidden = false;
+  })();
+</script>
+</body>
+</html>
