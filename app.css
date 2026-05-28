@@ -206,7 +206,7 @@ button { font: inherit; cursor: pointer; }
   letter-spacing: 0.08em; text-transform: uppercase;
 }
 .onboard { padding: clamp(40px, 6vw, 72px) 0 96px; }
-.onboard .head { max-width: 640px; margin-bottom: 36px; }
+.onboard .head { max-width: 660px; margin: 0 auto 36px; }
 .onboard .head .eyebrow { display: inline-block; margin-bottom: 16px; }
 .onboard h1 {
   font-size: clamp(32px, 4.4vw, 46px); font-weight: 500;
@@ -216,7 +216,7 @@ button { font: inherit; cursor: pointer; }
 .onboard .head p { font-size: 17px; color: var(--ink-2); margin: 0; line-height: 1.45; text-wrap: pretty; }
 .form-card {
   background: #FFFCF6; border: 1px solid var(--rule); border-radius: var(--r-lg);
-  padding: clamp(24px, 4vw, 34px); max-width: 660px;
+  padding: clamp(24px, 4vw, 34px); max-width: 660px; margin: 0 auto;
   box-shadow: 0 1px 0 rgba(22,21,19,.02), 0 24px 60px -32px rgba(22,21,19,.16);
 }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -229,7 +229,7 @@ button { font: inherit; cursor: pointer; }
 .form-card .give-note::before { content: "🔒"; }
 
 /* ---------- Result card (mirrors homepage benchmark card) ---------- */
-.result { max-width: 660px; }
+.result { max-width: 660px; margin: 0 auto; }
 .card {
   background: #FFFCF6; border: 1px solid var(--rule); border-radius: var(--r-lg);
   box-shadow: 0 1px 0 rgba(22,21,19,.02), 0 24px 60px -28px rgba(22,21,19,.18);
