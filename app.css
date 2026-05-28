@@ -347,3 +347,30 @@ button { font: inherit; cursor: pointer; }
   .vpct { text-align: left; }
   .tiles { grid-template-columns: 1fr; }
 }
+
+/* ---------- Verified fair-pay openings (employer placements) ---------- */
+.openings .block-sub strong { color: var(--accent-ink); font-weight: 600; }
+.opening-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.opening {
+  border: 1px solid var(--rule); border-radius: var(--r-md);
+  padding: 18px; background: var(--bg);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.opening-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.fp-badge {
+  font-family: "Geist Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: 0.03em;
+  color: #1f5236; background: #E2EFE6; border: 1px solid #BBD8C4;
+  padding: 4px 9px; border-radius: 999px; white-space: nowrap;
+}
+.opening-delta {
+  font-family: "Geist Mono", ui-monospace, monospace; font-size: 12px;
+  padding: 3px 8px; border-radius: 6px; white-space: nowrap;
+}
+.opening-delta.up { color: #1f5236; background: #E2EFE6; }
+.opening-delta.down { color: var(--muted); background: var(--bg-2); }
+.opening-emp { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; margin: 4px 0 0; }
+.opening-meta { font-size: 13px; color: var(--muted); }
+.opening-pay { font-size: 24px; font-weight: 500; letter-spacing: -0.02em; color: var(--ink); margin-top: 2px; }
+.opening-pay span { font-size: 14px; color: var(--muted); font-weight: 400; }
+.opening-cta { align-self: flex-start; margin-top: 8px; }
+@media (max-width: 640px) { .opening-list { grid-template-columns: 1fr; } }

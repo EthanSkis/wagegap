@@ -65,6 +65,13 @@
       </div>
     </section>
 
+    <!-- ===== VERIFIED FAIR-PAY OPENINGS (employer placements) ===== -->
+    <section class="block openings" id="openings" hidden>
+      <h2 class="block-h">Verified fair-pay openings near you</h2>
+      <p class="block-sub" id="openings-sub"></p>
+      <div class="opening-list" id="opening-list"></div>
+    </section>
+
     <!-- ===== YOUR ENTRY (editable) ===== -->
     <section class="block entry">
       <h2 class="block-h">Your entry</h2>
@@ -207,6 +214,60 @@
     }).join("");
   }
 
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+
+  // Employer placements: certified, above-market openings matched off the
+  // profile. Rendered beneath the read; the section stays hidden if nothing
+  // qualifies. Never mixed into the benchmark numbers.
+  async function loadOpenings(entry) {
+    const herTotal = WG.read(entry).total;
+    const { data, error } = await sb
+      .from("job_openings")
+      .select("*")
+      .eq("specialty", entry.specialty)
+      .eq("metro", entry.metro)
+      .eq("fair_pay_certified", true)
+      .eq("active", true)
+      .order("pay_max", { ascending: false });
+    if (error || !data || !data.length) return;
+
+    const yrs = entry.experience_years;
+    const matches = (yrs == null) ? data : data.filter(function (o) {
+      return (o.exp_min == null || Number(o.exp_min) <= yrs) &&
+             (o.exp_max == null || Number(o.exp_max) >= yrs);
+    });
+    if (!matches.length) return;
+
+    function sm(n) { return (n >= 0 ? "+$" : "−$") + Math.abs(n).toFixed(2); }
+    function safeHref(u) { return (u && /^(https?:\/\/|\/|#)/.test(u)) ? u : "#"; }
+
+    document.getElementById("openings-sub").innerHTML =
+      "Fair-Pay Certified employers hiring " + esc(entry.specialty || "nurses") + " in " + esc(entry.metro || "your metro") +
+      " at your experience. <strong>Employer placements — paid listings matched to your profile. Never part of your benchmark.</strong>";
+
+    document.getElementById("opening-list").innerHTML = matches.map(function (o) {
+      const mid = (Number(o.pay_min) + Number(o.pay_max)) / 2;
+      const dMid = mid - herTotal;
+      const meta = [o.specialty, o.metro, o.shift_type, o.employer_type].filter(Boolean).map(esc).join(" · ");
+      return '<article class="opening">' +
+          '<div class="opening-top">' +
+            '<span class="fp-badge">&#10003; Fair-Pay Certified</span>' +
+            '<span class="opening-delta ' + (dMid >= 0 ? "up" : "down") + '">' + sm(dMid) + '/hr vs you</span>' +
+          '</div>' +
+          '<h3 class="opening-emp">' + esc(o.employer) + '</h3>' +
+          '<div class="opening-meta">' + meta + '</div>' +
+          '<div class="opening-pay">$' + Number(o.pay_min).toFixed(0) + '–$' + Number(o.pay_max).toFixed(0) + '<span>/hr</span></div>' +
+          '<a class="btn btn-ghost opening-cta" href="' + safeHref(o.apply_url) + '">View role &#8599;</a>' +
+        '</article>';
+    }).join("");
+
+    document.getElementById("openings").hidden = false;
+  }
+
   document.getElementById("signout").addEventListener("click", async function () {
     await sb.auth.signOut();
     location.href = "/";
@@ -231,6 +292,7 @@
     render(rows[0]);
     gate.hidden = true;
     app.hidden = false;
+    loadOpenings(rows[0]);
   })();
 </script>
 </body>
