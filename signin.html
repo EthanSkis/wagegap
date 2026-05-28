@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Sign in — Wagegap</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="Sign in to Wagegap to see where your wage stands against your specialty and metro." />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+
+<main class="auth-wrap">
+  <div class="auth-card">
+    <a href="/" class="logo"><img src="/wagegap-wordmark.svg" alt="Wagegap" /></a>
+
+    <h1 id="title">Sign in</h1>
+    <p class="sub" id="subtitle">Welcome back. See where you stand.</p>
+
+    <form id="auth-form" novalidate>
+      <div class="field">
+        <span class="lab">Email</span>
+        <input type="email" id="email" required autocomplete="email" placeholder="you@hospital.org" />
+      </div>
+      <div class="field">
+        <span class="lab">Password</span>
+        <input type="password" id="password" required minlength="6" autocomplete="current-password" placeholder="••••••••" />
+      </div>
+      <p class="msg" id="msg" role="alert" aria-live="polite"></p>
+      <button class="btn btn-accent btn-lg btn-block" type="submit" id="submit">Sign in →</button>
+    </form>
+
+    <p class="toggle">
+      <span id="toggle-text">New to Wagegap?</span>
+      <a href="#" id="toggle-link">Create an account</a>
+    </p>
+
+    <p class="auth-foot"><a href="/">← Back to home</a></p>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/supabase-client.js"></script>
+<script>
+  const params  = new URLSearchParams(location.search);
+  const nextUrl = params.get("next") || "/start";
+  let mode = params.get("mode") === "signup" ? "signup" : "signin";
+
+  const titleEl   = document.getElementById("title");
+  const subEl     = document.getElementById("subtitle");
+  const submitEl  = document.getElementById("submit");
+  const tTextEl   = document.getElementById("toggle-text");
+  const tLinkEl   = document.getElementById("toggle-link");
+  const msgEl     = document.getElementById("msg");
+  const pwEl      = document.getElementById("password");
+  const form      = document.getElementById("auth-form");
+
+  function setMsg(text, kind) {
+    msgEl.textContent = text || "";
+    msgEl.className = "msg" + (kind ? " " + kind : "");
+  }
+
+  function render() {
+    if (mode === "signup") {
+      titleEl.textContent  = "Create your account";
+      subEl.textContent    = "One verified wage unlocks your benchmark.";
+      submitEl.textContent = "Create account →";
+      tTextEl.textContent  = "Already have an account?";
+      tLinkEl.textContent  = "Sign in";
+      pwEl.setAttribute("autocomplete", "new-password");
+    } else {
+      titleEl.textContent  = "Sign in";
+      subEl.textContent    = "Welcome back. See where you stand.";
+      submitEl.textContent = "Sign in →";
+      tTextEl.textContent  = "New to Wagegap?";
+      tLinkEl.textContent  = "Create an account";
+      pwEl.setAttribute("autocomplete", "current-password");
+    }
+    setMsg("");
+  }
+
+  tLinkEl.addEventListener("click", function (e) {
+    e.preventDefault();
+    mode = mode === "signup" ? "signin" : "signup";
+    render();
+  });
+
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const email = document.getElementById("email").value.trim();
+    const password = pwEl.value;
+
+    if (!email || !password) { setMsg("Enter your email and password.", "error"); return; }
+    if (password.length < 6) { setMsg("Password must be at least 6 characters.", "error"); return; }
+
+    submitEl.disabled = true;
+    setMsg(mode === "signup" ? "Creating your account…" : "Signing you in…");
+
+    try {
+      if (mode === "signup") {
+        const { data, error } = await sb.auth.signUp({
+          email: email,
+          password: password,
+          options: { emailRedirectTo: location.origin + nextUrl }
+        });
+        if (error) throw error;
+        if (data.session) {
+          location.href = nextUrl;            // email confirmation disabled → straight in
+        } else {
+          setMsg("Account created. Check your email to confirm, then sign in.", "ok");
+          submitEl.disabled = false;
+        }
+      } else {
+        const { error } = await sb.auth.signInWithPassword({ email: email, password: password });
+        if (error) throw error;
+        location.href = nextUrl;
+      }
+    } catch (err) {
+      setMsg(err && err.message ? err.message : "Something went wrong. Try again.", "error");
+      submitEl.disabled = false;
+    }
+  });
+
+  // Already signed in? Skip straight to onboarding.
+  (async function () {
+    const { data } = await sb.auth.getSession();
+    if (data && data.session) location.href = nextUrl;
+  })();
+
+  render();
+</script>
+</body>
+</html>

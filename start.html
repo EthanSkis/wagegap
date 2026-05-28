@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Find your number — Wagegap</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="Contribute one verified wage and unlock exactly where you stand against your specialty in your metro." />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container row">
+    <a href="/" class="logo"><img src="/wagegap-wordmark.svg" alt="Wagegap" /></a>
+    <div class="who">
+      <span class="email" id="user-email"></span>
+      <button class="btn btn-ghost" id="signout" hidden>Sign out</button>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <!-- Loading / auth gate -->
+  <div class="gate" id="gate">Loading…</div>
+
+  <!-- App (revealed once authenticated) -->
+  <div id="app" hidden>
+
+    <!-- FORM VIEW -->
+    <section class="onboard" id="form-view">
+      <div class="head">
+        <span class="eyebrow">Give to get · Step 1 of 1</span>
+        <h1>Tell us where you stand.</h1>
+        <p>Add one verified wage for your role and metro. The moment you do, you unlock the live benchmark for your specialty — percentile, median, and the spread.</p>
+      </div>
+
+      <form class="form-card" id="wage-form" novalidate>
+        <div class="field">
+          <span class="lab">Specialty</span>
+          <select id="specialty">
+            <option value="ICU">ICU</option>
+            <option value="ER / Emergency">ER / Emergency</option>
+            <option value="Med-Surg">Med-Surg</option>
+            <option value="Telemetry">Telemetry</option>
+            <option value="Step-down / PCU">Step-down / PCU</option>
+            <option value="OR / Perioperative">OR / Perioperative</option>
+            <option value="PACU">PACU</option>
+            <option value="Labor & Delivery">Labor &amp; Delivery</option>
+            <option value="NICU">NICU</option>
+            <option value="Oncology">Oncology</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <span class="lab">Metro</span>
+          <input type="text" id="metro" value="Atlanta" autocomplete="off" />
+          <span class="hint">The pilot is live for Atlanta. Other metros are seeding now.</span>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <span class="lab">Years of experience</span>
+            <input type="number" id="experience" min="0" step="0.5" inputmode="decimal" placeholder="4" />
+          </div>
+          <div class="field">
+            <span class="lab">Shift</span>
+            <select id="shift">
+              <option value="Days">Days</option>
+              <option value="Nights">Nights</option>
+              <option value="Rotating">Rotating</option>
+              <option value="Weekends">Weekends</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="lab">Employer</span>
+          <input type="text" id="employer" autocomplete="off" placeholder="e.g. Emory Healthcare" />
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <span class="lab">Base hourly</span>
+            <div class="prefix-wrap">
+              <span class="prefix">$</span>
+              <input type="number" id="base" min="0" step="0.01" inputmode="decimal" placeholder="47.30" required />
+            </div>
+          </div>
+          <div class="field">
+            <span class="lab">Shift differentials <span style="color:var(--muted);font-weight:400">(per hr, optional)</span></span>
+            <div class="prefix-wrap">
+              <span class="prefix">$</span>
+              <input type="number" id="diff" min="0" step="0.01" inputmode="decimal" placeholder="0.00" />
+            </div>
+          </div>
+        </div>
+
+        <p class="msg" id="msg" role="alert" aria-live="polite"></p>
+        <div class="actions">
+          <button class="btn btn-accent btn-lg btn-block" type="submit" id="submit">Unlock my benchmark →</button>
+        </div>
+        <p class="give-note">Your individual wage is never shown to anyone. It enters the benchmark anonymized — only aggregated percentiles are ever displayed.</p>
+      </form>
+    </section>
+
+    <!-- RESULT VIEW -->
+    <section class="onboard result" id="result-view" hidden>
+      <div class="head">
+        <span class="eyebrow">Your read · Unlocked</span>
+        <h1 id="result-title">Here's where you stand.</h1>
+      </div>
+
+      <div class="card">
+        <div class="chead">
+          <div>
+            <div class="role" id="r-role">ICU RN</div>
+            <div class="where" id="r-where">Atlanta · seed benchmark</div>
+          </div>
+          <span class="badge">YOUR READ</span>
+        </div>
+        <div class="verdict">
+          <div>
+            <div class="label">You're at the</div>
+            <div class="number" id="r-pct">—</div>
+          </div>
+          <span class="delta" id="r-delta"></span>
+        </div>
+        <p class="verdict-text" id="r-text"></p>
+        <div class="bars" id="r-bars"></div>
+        <div class="cfoot">Seed benchmark for the <span id="r-metro2">Atlanta</span> ICU pilot · sharpens with every nurse who contributes</div>
+      </div>
+
+      <div class="after">
+        <a href="/" class="btn btn-ghost btn-lg">← Back to home</a>
+        <button class="btn btn-primary btn-lg" id="another">Submit another wage</button>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/supabase-client.js"></script>
+<script>
+  let session = null;
+
+  const gate      = document.getElementById("gate");
+  const app       = document.getElementById("app");
+  const formView  = document.getElementById("form-view");
+  const resultView= document.getElementById("result-view");
+  const form      = document.getElementById("wage-form");
+  const submitEl  = document.getElementById("submit");
+  const msgEl     = document.getElementById("msg");
+
+  function setMsg(text, kind) {
+    msgEl.textContent = text || "";
+    msgEl.className = "msg" + (kind ? " " + kind : "");
+  }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  // Illustrative ICU / Atlanta seed distribution (matches the homepage preview).
+  const ANCHORS = [
+    { label: "90th",   amt: 58.40, w: 92 },
+    { label: "75th",   amt: 54.10, w: 78 },
+    { label: "Median", amt: 51.50, w: 64 },
+    { label: "25th",   amt: 45.00, w: 42 }
+  ];
+  const MEDIAN = 51.50;
+  const P75 = 54.10;
+
+  function estPct(t) {
+    const P = [[42,10],[45,25],[51.5,50],[54.1,75],[58.4,90]];
+    if (t <= P[0][0]) {
+      const slope = (P[1][1]-P[0][1])/(P[1][0]-P[0][0]);
+      return clamp(Math.round(P[0][1] + (t-P[0][0])*slope), 2, 98);
+    }
+    for (let i = 0; i < P.length-1; i++) {
+      if (t <= P[i+1][0]) {
+        const w1=P[i][0], p1=P[i][1], w2=P[i+1][0], p2=P[i+1][1];
+        return clamp(Math.round(p1 + (t-w1)/(w2-w1)*(p2-p1)), 2, 98);
+      }
+    }
+    const n = P.length;
+    const slope = (P[n-1][1]-P[n-2][1])/(P[n-1][0]-P[n-2][0]);
+    return clamp(Math.round(P[n-1][1] + (t-P[n-1][0])*slope), 2, 98);
+  }
+  function barWidth(pct) { return clamp(Math.round(28 + pct*0.72), 18, 96); }
+  function ordinal(n) {
+    const s = ["th","st","nd","rd"], v = n % 100;
+    return n + (s[(v-20)%10] || s[v] || s[0]);
+  }
+
+  function renderResult(vals) {
+    const total = vals.base + vals.diff;
+    const pct = estPct(total);
+    const delta = total - MEDIAN;
+
+    document.getElementById("r-role").textContent =
+      vals.specialty + (vals.experience != null ? " · " + vals.experience + " yrs" : "") + " · " + vals.shift;
+    document.getElementById("r-where").textContent = vals.metro + " · seed benchmark";
+    document.getElementById("r-metro2").textContent = vals.metro;
+
+    const pctEl = document.getElementById("r-pct");
+    pctEl.innerHTML = pct + '<span style="font-size:32px;letter-spacing:0;">' +
+      ordinal(pct).replace(String(pct), "") + '</span> <span style="font-size:24px;letter-spacing:.02em;color:var(--muted);">pct.</span>';
+
+    const deltaEl = document.getElementById("r-delta");
+    deltaEl.textContent = (delta >= 0 ? "+$" : "−$") + Math.abs(delta).toFixed(2) + " / hr vs. median";
+    deltaEl.className = "delta" + (delta >= 0 ? " up" : "");
+
+    let text;
+    if (pct < 45) {
+      const gap = P75 - total;
+      text = "You're being paid less than the typical " + vals.specialty + " nurse in " + vals.metro +
+        " at your experience and shift." + (gap > 0 ? " The 75th percentile is $" + gap.toFixed(2) + "/hr above you." : "");
+    } else if (pct <= 55) {
+      text = "You're right around the " + vals.metro + " " + vals.specialty + " median for your experience and shift.";
+    } else {
+      text = "You're ahead of the typical " + vals.specialty + " nurse in " + vals.metro +
+        " — above the local median for your experience and shift.";
+    }
+    document.getElementById("r-text").textContent = text;
+
+    const rows = ANCHORS.map(function (a) { return { label: a.label, amt: a.amt, w: a.w, you: false }; });
+    rows.push({ label: "You · " + ordinal(pct), amt: total, w: barWidth(pct), you: true });
+    rows.sort(function (a, b) { return b.amt - a.amt; });
+
+    document.getElementById("r-bars").innerHTML = rows.map(function (r) {
+      return '<div class="brow' + (r.you ? " you" : "") + '">' +
+        '<span class="pct">' + r.label + '</span>' +
+        '<div class="track"><div class="fill" style="width:' + r.w + '%"></div></div>' +
+        '<span class="amt">$' + r.amt.toFixed(2) + '</span></div>';
+    }).join("");
+
+    formView.hidden = true;
+    resultView.hidden = false;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const base = parseFloat(document.getElementById("base").value);
+    if (!(base > 0)) { setMsg("Enter your base hourly wage.", "error"); return; }
+
+    const diffRaw = document.getElementById("diff").value;
+    const diff = diffRaw === "" ? 0 : parseFloat(diffRaw);
+    const expRaw = document.getElementById("experience").value;
+    const experience = expRaw === "" ? null : parseFloat(expRaw);
+    const specialty = document.getElementById("specialty").value;
+    const metro = document.getElementById("metro").value.trim() || "Atlanta";
+    const shift = document.getElementById("shift").value;
+    const employer = document.getElementById("employer").value.trim();
+
+    submitEl.disabled = true;
+    setMsg("Saving your wage and computing your read…");
+
+    const { error } = await sb.from("wage_reports").insert({
+      user_id: session.user.id,
+      specialty: specialty,
+      metro: metro,
+      experience_years: experience,
+      shift_type: shift,
+      employer: employer || null,
+      hourly_base: base,
+      differentials: isNaN(diff) ? 0 : diff
+    });
+
+    if (error) {
+      setMsg(error.message || "Could not save your submission. Try again.", "error");
+      submitEl.disabled = false;
+      return;
+    }
+    setMsg("");
+    submitEl.disabled = false;
+    renderResult({ base: base, diff: isNaN(diff) ? 0 : diff, specialty: specialty, metro: metro, shift: shift, experience: experience });
+  });
+
+  document.getElementById("another").addEventListener("click", function () {
+    resultView.hidden = true;
+    formView.hidden = false;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  document.getElementById("signout").addEventListener("click", async function () {
+    await sb.auth.signOut();
+    location.href = "/";
+  });
+
+  // Auth gate: require a session, else send to sign-in.
+  (async function () {
+    const { data } = await sb.auth.getSession();
+    if (!data || !data.session) {
+      location.href = "/signin?next=" + encodeURIComponent("/start");
+      return;
+    }
+    session = data.session;
+    document.getElementById("user-email").textContent = session.user.email || "";
+    document.getElementById("signout").hidden = false;
+    gate.hidden = true;
+    app.hidden = false;
+  })();
+</script>
+</body>
+</html>
