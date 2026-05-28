@@ -38,6 +38,7 @@
   }
 
   *, *::before, *::after { box-sizing: border-box; }
+  [hidden] { display: none !important; }
 
   html { -webkit-text-size-adjust: 100%; }
   body {
@@ -715,8 +716,9 @@
         <a href="#employers">For employers</a>
       </div>
       <span class="divider"></span>
-      <a href="/signin" style="font-size:15px;">Sign in</a>
-      <a href="/start" class="btn btn-primary">Find your number</a>
+      <a href="/signin" style="font-size:15px;" data-auth="out">Sign in</a>
+      <a href="/start" class="btn btn-primary" data-auth="out">Find your number</a>
+      <a href="/start" class="btn btn-primary" data-auth="in" hidden>My wages</a>
     </nav>
   </div>
 </header>
@@ -1050,5 +1052,18 @@
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/supabase-client.js"></script>
+<script>
+  // Swap the header to a logged-in state when a Supabase session exists.
+  (async function () {
+    try {
+      const { data } = await sb.auth.getSession();
+      const loggedIn = !!(data && data.session);
+      document.querySelectorAll('[data-auth="in"]').forEach(function (el) { el.hidden = !loggedIn; });
+      document.querySelectorAll('[data-auth="out"]').forEach(function (el) { el.hidden = loggedIn; });
+    } catch (e) { /* on any error, keep the default logged-out header */ }
+  })();
+</script>
 </body>
 </html>
