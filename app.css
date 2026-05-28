@@ -1,0 +1,272 @@
+/* =========================================================
+   Wagegap — shared styles for the auth + onboarding pages.
+   Tokens mirror index.html for brand continuity.
+   ========================================================= */
+
+:root {
+  --bg: #F7F4EE;
+  --bg-2: #EFEBE3;
+  --bg-3: #ECE6D8;
+  --ink: #161513;
+  --ink-2: #2B2926;
+  --muted: #7A756C;
+  --rule: #D9D2C3;
+  --accent: #B0431E;
+  --accent-soft: #F4D9C9;
+  --accent-ink: #6E2A12;
+  --good: #2E6F4A;
+
+  --max: 1280px;
+  --pad-x: clamp(20px, 4vw, 56px);
+
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 14px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-feature-settings: "ss01", "ss02";
+  font-size: 18px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+a { color: inherit; text-decoration: none; }
+button { font: inherit; cursor: pointer; }
+
+.mono {
+  font-family: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  letter-spacing: 0.02em;
+}
+.eyebrow {
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 13px;
+  color: var(--accent);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.container {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 0 var(--pad-x);
+}
+
+/* ---------- Top bar ---------- */
+.topbar {
+  border-bottom: 1px solid var(--rule);
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  backdrop-filter: saturate(120%) blur(6px);
+}
+.topbar .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 68px;
+}
+.logo {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+}
+.logo img { display: block; height: 30px; width: auto; }
+.topbar .who {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.topbar .who .email {
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: var(--r-md);
+  font-size: 15px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  transition: transform .08s ease, background .15s ease, color .15s ease, border-color .15s ease;
+  white-space: nowrap;
+}
+.btn-primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.btn-primary:hover { background: var(--accent); border-color: var(--accent); }
+.btn-primary:active { transform: translateY(1px); }
+.btn-ghost { background: transparent; color: var(--ink); border-color: var(--rule); }
+.btn-ghost:hover { border-color: var(--ink); }
+.btn-accent { background: var(--accent); color: #FFF8F3; border-color: var(--accent); }
+.btn-accent:hover { background: var(--accent-ink); border-color: var(--accent-ink); }
+.btn-accent:active { transform: translateY(1px); }
+.btn[disabled] { opacity: .55; cursor: default; transform: none; }
+.btn-lg { height: 56px; padding: 0 26px; font-size: 17px; border-radius: 10px; }
+.btn-block { width: 100%; }
+
+/* ---------- Forms ---------- */
+.field { display: flex; flex-direction: column; gap: 7px; margin-bottom: 18px; }
+.field .lab { font-size: 13px; font-weight: 500; color: var(--ink-2); }
+.field input,
+.field select {
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+  background: #fff;
+  font: inherit;
+  font-size: 16px;
+  color: var(--ink);
+  width: 100%;
+}
+.field select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 38px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%237A756C' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+.field input:focus,
+.field select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.field .hint { font-size: 12px; color: var(--muted); }
+.field .prefix-wrap { position: relative; }
+.field .prefix-wrap .prefix {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  color: var(--muted); font-size: 16px; pointer-events: none;
+}
+.field .prefix-wrap input { padding-left: 28px; }
+
+.msg { min-height: 20px; font-size: 14px; margin: 2px 0 16px; line-height: 1.4; }
+.msg.error { color: var(--accent-ink); }
+.msg.ok { color: var(--good); }
+
+/* ---------- Auth card ---------- */
+.auth-wrap {
+  min-height: calc(100vh - 0px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 20px 96px;
+  background:
+    radial-gradient(circle at 50% 0%, var(--accent-soft) 0%, transparent 55%),
+    var(--bg);
+}
+.auth-card {
+  width: 100%;
+  max-width: 432px;
+  background: #FFFCF6;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+  box-shadow: 0 1px 0 rgba(22,21,19,.02), 0 24px 60px -28px rgba(22,21,19,.18);
+  padding: 40px 36px 30px;
+}
+.auth-card .logo { margin-bottom: 26px; }
+.auth-card h1 {
+  font-size: 30px; font-weight: 500; letter-spacing: -0.02em;
+  margin: 0 0 8px; line-height: 1.1;
+}
+.auth-card .sub { font-size: 15px; color: var(--muted); margin: 0 0 26px; line-height: 1.45; }
+.toggle { font-size: 14px; color: var(--muted); text-align: center; margin: 18px 0 0; }
+.toggle a { color: var(--accent); font-weight: 500; }
+.auth-foot { text-align: center; margin-top: 22px; }
+.auth-foot a { font-size: 13px; color: var(--muted); }
+.auth-foot a:hover { color: var(--accent); }
+
+/* ---------- Onboarding ---------- */
+.gate {
+  min-height: 60vh; display: flex; align-items: center; justify-content: center;
+  color: var(--muted);
+  font-family: "Geist Mono", ui-monospace, monospace; font-size: 13px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.onboard { padding: clamp(40px, 6vw, 72px) 0 96px; }
+.onboard .head { max-width: 640px; margin-bottom: 36px; }
+.onboard .head .eyebrow { display: inline-block; margin-bottom: 16px; }
+.onboard h1 {
+  font-size: clamp(32px, 4.4vw, 46px); font-weight: 500;
+  letter-spacing: -0.025em; line-height: 1.05; margin: 0 0 14px;
+  text-wrap: balance;
+}
+.onboard .head p { font-size: 17px; color: var(--ink-2); margin: 0; line-height: 1.45; text-wrap: pretty; }
+.form-card {
+  background: #FFFCF6; border: 1px solid var(--rule); border-radius: var(--r-lg);
+  padding: clamp(24px, 4vw, 34px); max-width: 660px;
+  box-shadow: 0 1px 0 rgba(22,21,19,.02), 0 24px 60px -32px rgba(22,21,19,.16);
+}
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 560px) { .grid-2 { grid-template-columns: 1fr; } }
+.form-card .actions { margin-top: 10px; }
+.form-card .give-note {
+  font-size: 13px; color: var(--muted); margin: 14px 0 0; line-height: 1.45;
+  display: flex; gap: 8px;
+}
+.form-card .give-note::before { content: "🔒"; }
+
+/* ---------- Result card (mirrors homepage benchmark card) ---------- */
+.result { max-width: 660px; }
+.card {
+  background: #FFFCF6; border: 1px solid var(--rule); border-radius: var(--r-lg);
+  box-shadow: 0 1px 0 rgba(22,21,19,.02), 0 24px 60px -28px rgba(22,21,19,.18);
+  overflow: hidden;
+}
+.card .chead {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px; border-bottom: 1px solid var(--rule); background: var(--bg-2);
+}
+.card .chead .role { font-weight: 600; font-size: 16px; }
+.card .chead .where { font-size: 13px; color: var(--muted); }
+.card .chead .badge {
+  font-family: "Geist Mono", ui-monospace, monospace; font-size: 12px;
+  background: var(--ink); color: var(--bg); padding: 6px 10px; border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+.card .verdict { padding: 28px 22px 8px; display: flex; align-items: baseline; gap: 16px; }
+.card .verdict .label {
+  font-family: "Geist Mono", ui-monospace, monospace; font-size: 12px; color: var(--muted);
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+.card .verdict .number { font-size: 56px; font-weight: 500; letter-spacing: -0.025em; line-height: 1; color: var(--accent); }
+.card .verdict .delta {
+  font-family: "Geist Mono", ui-monospace, monospace; font-size: 14px;
+  color: var(--accent-ink); background: var(--accent-soft); padding: 4px 10px; border-radius: 6px;
+}
+.card .verdict .delta.up { color: #1f5236; background: #d8ecdf; }
+.card .verdict-text { padding: 0 22px 18px; font-size: 15px; color: var(--ink-2); line-height: 1.4; }
+.bars { padding: 12px 22px 22px; display: flex; flex-direction: column; gap: 10px; }
+.bars .brow {
+  display: grid; grid-template-columns: 92px 1fr 70px; align-items: center; gap: 12px;
+  font-family: "Geist Mono", ui-monospace, monospace; font-size: 12px; color: var(--muted);
+}
+.bars .brow .amt { text-align: right; color: var(--ink-2); }
+.bars .track { height: 10px; background: var(--bg-2); border-radius: 999px; overflow: hidden; }
+.bars .fill { height: 100%; background: var(--ink-2); border-radius: 999px; }
+.bars .brow.you .pct { color: var(--accent); }
+.bars .brow.you .amt { color: var(--accent); font-weight: 600; }
+.bars .brow.you .fill { background: var(--accent); }
+.card .cfoot {
+  padding: 14px 22px; background: var(--bg-2); border-top: 1px solid var(--rule);
+  font-family: "Geist Mono", ui-monospace, monospace; font-size: 12px; color: var(--muted);
+}
+.result .after { margin-top: 22px; display: flex; gap: 12px; flex-wrap: wrap; }
