@@ -26,6 +26,10 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
+/* Author display rules (e.g. .gate flex, .btn inline-flex) otherwise
+   override the UA [hidden] rule, leaving "hidden" elements visible. */
+[hidden] { display: none !important; }
+
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
